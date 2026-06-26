@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Checkout · Ops Room Strategy Call</title>
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- Square Web Payments SDK.
+     PRODUCTION (live cards): the line below.
+     SANDBOX (test cards): swap to https://sandbox.web.squarecdn.com/v1/square.js -->
+<script src="https://web.squarecdn.com/v1/square.js"></script>
+
+<style>
+  :root {
+    --cream:#f4efe4; --cream-deep:#ebe5d6; --cream-card:#f9f5ec;
+    --ink:#1c1a15; --ink-soft:#2a2721; --surface-dark:#322d25;
+    --gold:#b8914a; --gold-deep:#9d7a3a; --gold-soft:#d4b378;
+    --text:#2d2a24; --text-muted:#6b6459; --text-on-dark:#e8e1d1; --text-on-dark-muted:#a89f8d;
+    --border-subtle:rgba(28,26,21,0.12); --border-stronger:rgba(28,26,21,0.22);
+    --red:#8b3a3a; --green:#4a7c4a;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { -webkit-font-smoothing:antialiased; }
+  body {
+    font-family:'Inter',sans-serif; background:var(--cream); color:var(--text);
+    line-height:1.6; font-size:16px; min-height:100vh;
+    display:flex; align-items:flex-start; justify-content:center; padding:48px 22px 80px;
+  }
+  em { font-style:italic; }
+  .checkout { width:100%; max-width:540px; }
+
+  .eyebrow {
+    font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:500;
+    letter-spacing:0.22em; text-transform:uppercase; color:var(--gold-deep);
+    margin-bottom:18px; display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before { content:''; width:28px; height:1.5px; background:var(--gold); }
+
+  h1 { font-family:'Cormorant Garamond',serif; font-weight:500; font-size:clamp(30px,5vw,42px); line-height:1.06; color:var(--ink); margin-bottom:6px; }
+  h1 em { color:var(--gold-deep); }
+  .subtitle { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:18px; color:var(--text-muted); margin-bottom:28px; }
+
+  .card {
+    background:var(--cream-card); border:1px solid var(--border-subtle);
+    border-top:3px solid var(--gold); border-radius:14px;
+    padding:34px 34px 30px; box-shadow:0 24px 56px -34px rgba(80,50,20,0.28);
+  }
+
+  .summary {
+    display:flex; justify-content:space-between; align-items:baseline; gap:16px;
+    padding-bottom:18px; border-bottom:1px solid var(--border-subtle); margin-bottom:18px;
+  }
+  .summary .what strong { display:block; font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:600; color:var(--ink); line-height:1.2; }
+  .summary .what span { font-size:13.5px; color:var(--text-muted); }
+  .summary .price { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:34px; color:var(--ink); line-height:1; white-space:nowrap; }
+
+  .policy {
+    font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.04em;
+    color:var(--gold-deep); margin-bottom:26px;
+  }
+
+  .pay-label {
+    font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:0.2em;
+    text-transform:uppercase; color:var(--text-muted); margin-bottom:12px;
+  }
+  /* Square injects its card iframe inside this container */
+  #card-container {
+    background:#fff; border:1px solid var(--border-stronger); border-radius:9px;
+    padding:4px 14px; min-height:52px; margin-bottom:8px;
+  }
+
+  #payment-status { font-size:13.5px; min-height:20px; margin:8px 0 4px; }
+  #payment-status.error { color:var(--red); }
+  #payment-status.ok { color:var(--green); }
+
+  #pay-button {
+    width:100%; background:var(--surface-dark); color:var(--cream); border:none;
+    padding:17px 26px; font-family:'Inter',sans-serif; font-size:16px; font-weight:600;
+    border-radius:9px; cursor:pointer; margin-top:14px; transition:background 0.18s, opacity 0.18s;
+  }
+  #pay-button:hover:not(:disabled) { background:#3f3930; }
+  #pay-button:disabled { opacity:0.55; cursor:default; }
+
+  .secure {
+    text-align:center; font-family:'JetBrains Mono',monospace; font-size:9.5px;
+    letter-spacing:0.05em; color:var(--text-muted); margin-top:16px; line-height:1.6;
+  }
+  .secure strong { color:var(--text); font-weight:600; }
+
+  .foot { text-align:center; font-size:12px; color:var(--text-muted); margin-top:24px; }
+  .foot a { color:var(--gold-deep); text-decoration:none; }
+
+  @media (max-width:560px){ .card { padding:26px 22px 24px; } }
+</style>
+</head>
+<body>
+  <div class="checkout">
+    <p class="eyebrow">The Ops Room &nbsp;·&nbsp; Checkout</p>
+    <h1>Ops Room <em>Strategy Call</em></h1>
+    <p class="subtitle">Pay below, then pick your time on the next page.</p>
+
+    <div class="card">
+      <div class="summary">
+        <div class="what">
+          <strong>Ops Room Strategy Call</strong>
+          <span>One 60-minute 1:1 strategy call with Arvin</span>
+        </div>
+        <div class="price">$350</div>
+      </div>
+      <p class="policy">One strategy call per client per month</p>
+
+      <p class="pay-label">Payment details</p>
+      <div id="card-container"></div>
+      <div id="payment-status"></div>
+
+      <button id="pay-button" type="button" disabled>Loading secure checkout…</button>
+
+      <p class="secure"><strong>Secured by Square.</strong><br>Right after payment you'll be taken to schedule your call.</p>
+    </div>
+
+    <p class="foot">Questions? <a href="mailto:connect@arvinanderson.com">connect@arvinanderson.com</a></p>
+  </div>
+
+<script>
+  // ───────────────────────────────────────────────────────────
+  //  FILL THESE IN with your Square PUBLIC values (safe in page).
+  //  Find them in your Square Developer dashboard for the app
+  //  that is connected to the Square account that gets paid.
+  //  The SECRET access token does NOT go here — it lives only in
+  //  Netlify as an environment variable for the charge function.
+  // ──────────────────────────────────────────────────────────
+  const SQUARE_APPLICATION_ID = 'sq0idp-FGouGZ2oVztya9R2NVR9Cg';
+  const SQUARE_LOCATION_ID    = 'QFPN718Q6WKDY';
+
+  // Where they go after a successful payment:
+  const CALENDLY_URL    = 'https://calendly.com/connect-arvinanderson/ops-room-strategy-call';
+  // The serverless function that charges the card:
+  const CHARGE_ENDPOINT = '/.netlify/functions/charge-strategy-call';
+
+  const statusEl = document.getElementById('payment-status');
+  const payBtn   = document.getElementById('pay-button');
+
+  function setStatus(msg, kind) {
+    statusEl.textContent = msg || '';
+    statusEl.className = kind || '';
+  }
+
+  async function initSquare() {
+    if (!window.Square) { setStatus('Could not load the payment form. Refresh and try again.', 'error'); return; }
+    let payments, card;
+    try {
+      payments = window.Square.payments(SQUARE_APPLICATION_ID, SQUARE_LOCATION_ID);
+      card = await payments.card();
+      await card.attach('#card-container');
+    } catch (e) {
+      setStatus('Could not start the payment form. Refresh and try again.', 'error');
+      return;
+    }
+
+    payBtn.disabled = false;
+    payBtn.textContent = 'Pay $350';
+
+    payBtn.addEventListener('click', async () => {
+      setStatus('');
+      payBtn.disabled = true;
+      payBtn.textContent = 'Processing…';
+      try {
+        const result = await card.tokenize();
+        if (result.status !== 'OK') {
+          setStatus('Please check your card details and try again.', 'error');
+          payBtn.disabled = false; payBtn.textContent = 'Pay $350';
+          return;
+        }
+        const resp = await fetch(CHARGE_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sourceId: result.token })
+        });
+        const data = await resp.json().catch(() => ({}));
+        if (resp.ok && data.success) {
+          setStatus('Payment received. Taking you to scheduling…', 'ok');
+          window.location.href = CALENDLY_URL;
+        } else {
+          setStatus((data && data.message) || 'That payment did not go through. Please try again.', 'error');
+          payBtn.disabled = false; payBtn.textContent = 'Pay $350';
+        }
+      } catch (e) {
+        setStatus('Something went wrong processing the payment. Please try again.', 'error');
+        payBtn.disabled = false; payBtn.textContent = 'Pay $350';
+      }
+    });
+  }
+
+  initSquare();
+</script>
+</body>
+</html>
